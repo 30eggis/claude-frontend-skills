@@ -13,6 +13,23 @@ Transform existing Next.js mockup projects into production-ready specifications.
 **Input**: Next.js codebase (*.tsx)
 **Output**: Complete spec-it artifacts ready for spec-it-execute
 
+## Core Principle: Visual Preservation
+
+> **Onboard = Refactoring, NOT Rewriting.**
+>
+> The rendered HTML of every page MUST remain pixel-identical to the original mockup.
+> Internal code may be reorganized (componentized, re-routed, restructured),
+> but the user-visible output MUST NOT change.
+
+See [shared/references/onboard/visual-preservation.md](../../shared/references/onboard/visual-preservation.md) for detailed rules.
+
+Key constraints enforced across ALL phases:
+1. **Preserve tech stack** - Do NOT upgrade framework versions or add UI libraries (e.g., no shadcn/ui)
+2. **Verbatim HTML extraction** - Components must render the exact same HTML/Tailwind classes as the original inline code
+3. **Copy + Reorganize** - Pages migrate by copying existing code to new routes, not by rewriting
+4. **CSS preservation** - All existing globals.css, Tailwind config, and custom classes must be kept as-is
+5. **Navigation-only URL changes** - Route restructuring changes href values and file locations, not visual design
+
 ## Rules
 
 See [shared/references/common/output-rules.md](../../shared/references/common/output-rules.md).
@@ -77,8 +94,8 @@ IF --session {sessionId} in args:
     uiMode = "onboard"
     projectPath = {projectPath}
 ELSE:
-  # Direct invocation — create new session
-  result = Bash: session-init.sh "" onboard "{projectPath}"
+  # Direct invocation — create new session (pwd = skill execution location)
+  result = Bash: session-init.sh "" onboard
   sessionId = extract SESSION_ID
   sessionDir = extract SESSION_DIR
 

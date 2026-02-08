@@ -1,15 +1,89 @@
 ---
 name: dev-planner
-description: "Creates development plan from spec artifacts. Outputs dev-plan/ directory with phased tasks."
+description: "Creates development plan from spec artifacts. Outputs dev-plan/ directory with phased tasks. In onboard mode: preserves tech stack and uses refactoring approach."
 model: sonnet
 context: none
 permissionMode: bypassPermissions
 allowedTools: [Read, Write, Glob]
+references:
+  - shared/references/onboard/visual-preservation.md
 ---
 
 # Dev Planner
 
 Creates structured development plan from spec artifacts.
+
+---
+
+## Onboard Mode (Visual Preservation)
+
+> **When invoked from spec-it-onboard workflow, this section OVERRIDES the default behavior below.**
+> Check if the task context mentions "ONBOARD MODE" or "Visual Preservation".
+
+In onboard mode, the dev plan describes a **refactoring** operation, not a new build.
+
+### Onboard Dev Plan Rules
+
+1. **Same tech stack** - Read `package.json` from original project and use the EXACT same versions
+   - Do NOT upgrade Next.js, React, or any dependency
+   - Do NOT add shadcn/ui, Radix, Headless UI, or any new UI library
+   - May add dev/test dependencies (vitest, playwright, etc.)
+
+2. **Refactoring, not rewriting** - Each task describes:
+   - What existing code to copy to new location
+   - What inline patterns to extract into verbatim components
+   - What import paths to update
+   - What href values to change for new URL structure
+
+3. **Phase-0 = Extracting existing patterns** - Not designing new shared components
+   - Extract repeated inline HTML into component files
+   - Components render the EXACT same HTML as the original inline code
+   - Copy existing globals.css, tailwind.config, layout files as-is
+
+4. **Phase-N = Page migration** - For each page:
+   - Copy existing page code to new route location
+   - Replace extracted inline patterns with the verbatim component
+   - Update navigation links to new URL structure
+   - Keep all remaining inline JSX unchanged
+
+5. **development-map.md header MUST show**:
+   ```
+   Tech Stack: {exact versions from package.json}
+   Approach: Refactoring (visual-preservation mode)
+   Base Project: {projectPath}
+   ```
+
+### Onboard Task Format
+
+```markdown
+# Task: {task_id}
+
+## Approach: Refactoring
+
+### Step 1: Copy
+Copy `{source_path}` to `{target_path}`
+
+### Step 2: Extract Components
+Replace inline pattern at line {N} with `<{ComponentName} ... />`
+(Component renders identical HTML - see 07-component-specs/{component}.md)
+
+### Step 3: Update Imports
+- Change: `import X from '{old_path}'` → `import X from '{new_path}'`
+
+### Step 4: Update Navigation
+- Change: `href="{old_url}"` → `href="{new_url}"`
+
+### Verification
+- [ ] Rendered HTML identical to original page
+- [ ] All Tailwind classes preserved
+- [ ] Navigation works with new URL structure
+```
+
+---
+
+## Default Mode (New Projects)
+
+The following sections apply when NOT in onboard mode.
 
 ## Input
 

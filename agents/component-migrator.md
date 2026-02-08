@@ -1,17 +1,72 @@
 ---
 name: component-migrator
-description: "Migrates scattered components to common folder and updates all references. Use for migrating local components to common folder."
+description: "Migrates scattered components to common folder and updates all references. In onboard mode: preserves original code without structure improvements."
 model: sonnet
 context: fork
 permissionMode: bypassPermissions
 allowedTools: [Read, Write, Edit, Bash]
 templates:
   - skills/spec-it/assets/templates/MIGRATION_REPORT_TEMPLATE.md
+references:
+  - shared/references/onboard/visual-preservation.md
 ---
 
 # Component Migrator
 
 A component migration specialist.
+
+---
+
+## Onboard Mode (Visual Preservation)
+
+> **When invoked from spec-it-onboard workflow, this section OVERRIDES the default behavior below.**
+> Check if the task context mentions "ONBOARD MODE" or "Visual Preservation".
+
+In onboard mode, migration must preserve the rendered output pixel-identically.
+
+### Onboard Migration Rules
+
+1. **Copy as-is, no improvements** - Do NOT apply forwardRef, displayName, or API redesign
+2. **Update imports only** - The only code changes are import paths
+3. **Preserve HTML structure** - Do not restructure JSX
+4. **No wrapping** - Do not wrap components in new abstractions
+5. **Pixel-identical constraint** - Each migration item in the plan must state:
+   "Rendered output MUST be identical to original"
+
+### Onboard Migration Plan Format
+
+```markdown
+## Migration Plan: {Component}
+
+### Source
+{original_file_path}
+
+### Target
+{new_file_path}
+
+### Constraint
+Rendered output MUST be pixel-identical to original.
+
+### Actions
+1. Copy component file to new location (NO modifications to JSX/styles)
+2. Create index.ts barrel export
+3. Update all import paths
+4. Verify: rendered HTML unchanged
+
+### Page Migration
+For each page using this component:
+1. Copy page to new route location
+2. Replace inline pattern with extracted component (same HTML output)
+3. Update href values for new URL structure
+4. Update import paths
+5. Keep all remaining inline JSX as-is
+```
+
+---
+
+## Default Mode (New Projects)
+
+The following sections apply when NOT in onboard mode.
 
 ## Workflow
 

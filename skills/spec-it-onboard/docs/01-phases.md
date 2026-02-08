@@ -113,6 +113,9 @@ Options: [Approve, Revise]
 
 > complex의 chapter-planner와 달리, onboard에서는 **기존 코드의 리팩토링 구조를 확정**합니다.
 > "뭘 만들지"가 아니라 "이미 있는 걸 어떻게 재구성할지" 결정합니다.
+>
+> **Visual Preservation**: 구조 변경은 파일 위치, import 경로, 라우트 구조에만 적용합니다.
+> 페이지의 렌더링 결과(HTML/CSS)는 변경하지 않습니다.
 
 ```
 Bash: status-update.sh {sessionDir} agent-start chapter-planner
@@ -121,6 +124,11 @@ Task(chapter-planner, opus):
   Input: 00-analysis/, 01-personas/, 02-critique/critique-synthesis.md, 02-critique/critique-solve/
   Context: This is an ONBOARD project - existing code restructuring, NOT new development.
            Focus on: what to keep, what to refactor, what to merge, what to split.
+           CRITICAL: Visual Preservation applies. See shared/references/onboard/visual-preservation.md
+           - Do NOT plan any visual/UI changes
+           - Restructure = reorganize files and routes, NOT redesign pages
+           - The existing tech stack (framework version, CSS approach) MUST be preserved
+           - Plan should describe what code moves where, not what code gets rewritten
   Output: 03-chapters/restructure-plan-final.md
 
 Bash: status-update.sh {sessionDir} agent-complete chapter-planner "" 5.1
@@ -173,18 +181,29 @@ Bash: meta-checkpoint.sh {sessionDir} 7.1
 
 ## P8: Pattern Detection
 
+> **Visual Preservation**: 패턴 감지 시 원본 HTML/Tailwind 클래스를 정확히 기록해야 합니다.
+> `extraction-plan.md`에는 원본 코드의 verbatim 복사본이 포함되어야 하며,
+> 추출 후 컴포넌트가 원본과 동일한 HTML을 렌더링해야 한다는 제약조건을 명시해야 합니다.
+
 ```
 Bash: status-update.sh {sessionDir} agent-start ui-pattern-detector
 
 Read: shared/references/onboard/pattern-examples.md
+Read: shared/references/onboard/visual-preservation.md
 
 Task(ui-pattern-detector, sonnet):
   Input: projectPath/**/*.tsx, 05-components/inventory.md
+  Context: CRITICAL - Visual Preservation Mode.
+           - Record the EXACT original HTML/JSX for each detected pattern
+           - Include verbatim code snippets in duplicates/*.md
+           - extraction-plan.md MUST specify that extracted components render identical HTML
+           - Do NOT propose HTML restructuring or class name changes
+           - Props should only parameterize values that differ between occurrences
   Output:
     - 06-patterns/_index.md
     - 06-patterns/existing-components.md
-    - 06-patterns/duplicates/*.md
-    - 06-patterns/extraction-plan.md
+    - 06-patterns/duplicates/*.md (MUST include verbatim original code)
+    - 06-patterns/extraction-plan.md (MUST include visual preservation constraints)
 
 Bash: status-update.sh {sessionDir} agent-complete ui-pattern-detector "" 8.1
 Bash: meta-checkpoint.sh {sessionDir} 8.1
@@ -197,11 +216,24 @@ Options: [Approve, Revise]
 
 ## P9: Component Specs
 
+> **Visual Preservation**: 컴포넌트 스펙은 기존 인라인 HTML을 그대로 추출한 것이어야 합니다.
+> 새로운 디자인 토큰, 애니메이션, 또는 shadcn/ui 기반 컴포넌트를 설계하지 않습니다.
+> Props는 원본 코드에서 인스턴스 간 다른 값만 파라미터화합니다.
+
 ```
 Bash: status-update.sh {sessionDir} agent-start component-builder
 
+Read: shared/references/onboard/visual-preservation.md
+
 Task(component-builder, sonnet):
   Input: 06-patterns/duplicates/*.md
+  Context: ONBOARD MODE - Visual Preservation applies.
+           - Extract existing HTML verbatim into component files
+           - Do NOT design new component APIs or add design tokens
+           - Do NOT use shadcn/ui or any new UI library
+           - Props should parameterize only values that differ between occurrences
+           - The component MUST render the exact same HTML structure and Tailwind classes as the original
+           - See shared/references/onboard/visual-preservation.md Rule 2
   Output: 07-component-specs/{component}.md
 
 Bash: status-update.sh {sessionDir} agent-complete component-builder "" 9.1
@@ -215,11 +247,25 @@ Options: [Approve, Revise]
 
 ## P10: Migration Plan
 
+> **Visual Preservation**: 마이그레이션 계획은 렌더링 결과가 원본과 pixel-identical 해야 한다는
+> 제약조건을 포함해야 합니다. 컴포넌트 교체 시 원본 HTML 구조가 보존되어야 합니다.
+> "구조 개선(structure improvements)"은 적용하지 않습니다.
+
 ```
 Bash: status-update.sh {sessionDir} agent-start component-migrator
 
+Read: shared/references/onboard/visual-preservation.md
+
 Task(component-migrator, sonnet):
   Input: 05-components/, 06-patterns/, 07-component-specs/
+  Context: ONBOARD MODE - Visual Preservation applies.
+           - Migration = move files + update imports, NOT rewrite
+           - Do NOT apply "structure improvements" (no forwardRef addition, no API redesign)
+           - Each migration step must preserve identical rendered output
+           - migration-plan.md MUST include pixel-identical constraint per migration item
+           - Pages are migrated by copying existing code to new route, then replacing
+             extracted inline patterns with the verbatim component (same HTML output)
+           - See shared/references/onboard/visual-preservation.md Rule 3
   Output:
     - 08-migration/_index.md
     - 08-migration/migration-plan.md
@@ -306,6 +352,10 @@ Bash: meta-checkpoint.sh {sessionDir} 14.1
 
 ## P15: Final Assembly + Dev Plan
 
+> **Visual Preservation**: development-map.md는 기존 프로젝트와 동일한 기술 스택을 명시해야 합니다.
+> "신규 빌드"가 아닌 "리팩토링" 접근 방식을 사용합니다.
+> 각 Task는 "기존 코드를 복사 후 import만 변경"하는 방식으로 마이그레이션을 명세합니다.
+
 ```
 Bash: status-update.sh {sessionDir} agent-start spec-assembler
 
@@ -313,8 +363,22 @@ Task(spec-assembler, haiku):
   Input: spec-map.md, 10-tests/
   Output: 11-final/
 
+Read: shared/references/onboard/visual-preservation.md
+Read: {projectPath}/package.json
+
 Task(dev-planner, sonnet):
   Input: All artifacts
+  Context: ONBOARD MODE - Visual Preservation applies.
+           - development-map.md MUST specify the SAME tech stack as the original project
+             (read package.json to detect exact versions)
+           - Do NOT upgrade framework versions (e.g., Next.js 14 stays Next.js 14)
+           - Do NOT add new UI libraries (no shadcn/ui, no Radix, no Headless UI)
+           - Each task should describe a refactoring operation:
+             "Copy existing page code to new route → extract inline patterns into
+              verbatim components → update imports"
+           - Phase-0 shared infrastructure = extracting existing inline patterns into
+             component files (NOT designing new components)
+           - See shared/references/onboard/visual-preservation.md
   Output:
     - dev-plan/development-map.md
     - dev-plan/{persona}/Phase-{n}/
