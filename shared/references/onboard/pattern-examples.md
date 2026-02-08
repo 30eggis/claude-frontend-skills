@@ -216,3 +216,120 @@ For each detected pattern, generate:
 3. Structural template (with placeholders)
 4. Proposed props interface
 5. Generated component code
+
+---
+
+## Onboard Mode: Verbatim Extraction
+
+> **When used in onboard mode, extraction MUST preserve the exact original HTML.**
+> See `shared/references/onboard/visual-preservation.md` for full rules.
+
+### Key Difference from Default Mode
+
+| Aspect | Default Mode | Onboard Mode |
+|--------|-------------|--------------|
+| Goal | Design optimal component | Extract existing code as-is |
+| HTML structure | May redesign | Must preserve verbatim |
+| Tailwind classes | May optimize | Must keep exactly |
+| Props | Design ideal API | Only parameterize differing values |
+| New features | Encouraged | Forbidden |
+
+### Onboard Extraction Example
+
+**Detected pattern** (3 occurrences in hr-dashboard):
+
+```tsx
+// Occurrence 1 (line 45)
+<div className="bg-white rounded-2xl p-6 border border-slate-100 text-center">
+  <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-3">
+    <span className="text-blue-600 text-xl">👤</span>
+  </div>
+  <div className="text-sm text-slate-500 mb-1">출근 인원</div>
+  <div className="text-2xl font-bold text-slate-800">287<span className="text-sm font-normal text-slate-400 ml-1">명</span></div>
+</div>
+
+// Occurrence 2 (line 55)
+<div className="bg-white rounded-2xl p-6 border border-slate-100 text-center">
+  <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center mx-auto mb-3">
+    <span className="text-red-600 text-xl">⚠️</span>
+  </div>
+  <div className="text-sm text-slate-500 mb-1">지각 인원</div>
+  <div className="text-2xl font-bold text-red-600">3<span className="text-sm font-normal text-slate-400 ml-1">명</span></div>
+</div>
+```
+
+**Correct onboard extraction:**
+
+```tsx
+// Only parameterize the values that differ between occurrences
+interface StatCardProps {
+  icon: string;           // "👤" vs "⚠️"
+  iconBg: string;         // "bg-blue-50" vs "bg-red-50"
+  iconColor: string;      // "text-blue-600" vs "text-red-600"
+  label: string;          // "출근 인원" vs "지각 인원"
+  value: string | number; // "287" vs "3"
+  valueColor?: string;    // "text-slate-800" vs "text-red-600"
+  unit?: string;          // "명"
+}
+
+export function StatCard({ icon, iconBg, iconColor, label, value, valueColor = 'text-slate-800', unit }: StatCardProps) {
+  return (
+    // EXACT same structure - every className preserved
+    <div className="bg-white rounded-2xl p-6 border border-slate-100 text-center">
+      <div className={`w-12 h-12 ${iconBg} rounded-xl flex items-center justify-center mx-auto mb-3`}>
+        <span className={`${iconColor} text-xl`}>{icon}</span>
+      </div>
+      <div className="text-sm text-slate-500 mb-1">{label}</div>
+      <div className={`text-2xl font-bold ${valueColor}`}>
+        {value}
+        {unit && <span className="text-sm font-normal text-slate-400 ml-1">{unit}</span>}
+      </div>
+    </div>
+  );
+}
+```
+
+**Wrong onboard extraction (DO NOT):**
+
+```tsx
+// WRONG - redesigned with new abstractions, different classes, shadcn/ui
+import { Card, CardContent } from '@/components/ui/card';
+
+export function StatCard({ label, value, variant = 'default' }: StatCardProps) {
+  return (
+    <Card className="p-4">
+      <CardContent className="flex flex-col items-center">
+        <Typography variant="caption">{label}</Typography>
+        <Typography variant="h3" color={variant}>{value}</Typography>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+### Onboard Output Format for duplicates/*.md
+
+```markdown
+# Pattern: {PatternName}
+
+## Occurrences: {count}
+
+| # | File | Lines | Differs |
+|---|------|-------|---------|
+| 1 | src/app/page.tsx | 45-53 | icon=👤, iconBg=bg-blue-50, label=출근 인원, value=287 |
+| 2 | src/app/page.tsx | 55-63 | icon=⚠️, iconBg=bg-red-50, label=지각 인원, value=3 |
+
+## Verbatim Template
+```tsx
+{exact original JSX with variable parts marked as {prop_name}}
+```
+
+## Variable Values
+| Prop | Type | Occurrences |
+|------|------|-------------|
+| icon | string | "👤", "⚠️", "🏖️" |
+| iconBg | string | "bg-blue-50", "bg-red-50", "bg-green-50" |
+
+## Constraint
+Extracted component MUST render identical HTML to the original inline code.
+```
