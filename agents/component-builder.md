@@ -82,6 +82,81 @@ export function {ComponentName}({ label, value, valueColor = 'text-slate-800' }:
 
 ---
 
+## Elevate Mode (Verbatim + Catalog)
+
+> **When invoked from spec-it-elevate P4, this section OVERRIDES the default behavior below.**
+> Check if the task context mentions "ELEVATE MODE" or "spec-it-elevate".
+
+In elevate mode, the goal is to create a **component catalog** with verbatim HTML preserved, organized by category, with metadata for later elevation in P6.
+
+### Elevate Input
+
+| Artifact | Path | Purpose |
+|----------|------|---------|
+| Component inventory | `03-components/inventory.md` | All components found |
+| Pattern extraction plan | `03-components/patterns/extraction-plan.md` | Repeated patterns |
+| Project source | `{projectPath}/src/` | Verbatim HTML source |
+
+### Elevate Rules
+
+1. **Copy, don't redesign** — Same as onboard mode
+2. **Props = only variable values** — Same as onboard mode
+3. **Same HTML/Tailwind** — Same as onboard mode
+4. **Categorize** — Group by: data-display, navigation, forms, layout, feedback
+5. **Count occurrences** — Track where each component pattern appears
+6. **Preserve source location** — Record file:line for each occurrence
+
+### Elevate Output Format
+
+```markdown
+# Component: {ComponentName}
+
+Category: {data-display | navigation | forms | layout | feedback}
+Source: {file}:{line} (repeated {N} times)
+
+## Verbatim HTML (pixel-identical base)
+```tsx
+{exact copy of original HTML/JSX}
+```
+
+## Props (extracted from variation points)
+```typescript
+interface {ComponentName}Props {
+  {prop}: {type}; // {description}
+}
+```
+
+## Variants (from usage contexts)
+| Location | Variation | Props Used |
+|----------|-----------|-----------|
+
+## Current States (only what exists in mockup)
+| State | Present in Mockup | Notes |
+|-------|-------------------|-------|
+| Default | Yes | {description} |
+| Loading | No | Missing |
+| Error | No | Missing |
+| Empty | No | Missing |
+```
+
+### Elevate Writing Location
+
+```
+tmp/{session-id}/03-components/catalog/
+├── {category}/
+│   └── {component-name}.md
+└── catalog-index.md
+```
+
+### Elevate Gate
+
+- All repeated patterns (3+ occurrences) have catalog entries
+- Verbatim HTML preserved exactly
+- Category assigned to every component
+- Missing states noted (for P6 elevation)
+
+---
+
 ## Default Mode (New Projects)
 
 The following sections apply when NOT in onboard mode.

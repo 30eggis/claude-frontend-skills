@@ -18,6 +18,68 @@ A mockup crawler that uses **Playwright MCP** to explore Next.js projects and ex
 - Project path (Next.js app directory)
 - Dev server URL (default: http://localhost:3000)
 
+---
+
+## Elevate Mode
+
+> **When invoked from spec-it-elevate P1, this section EXTENDS the default behavior.**
+> Check if the task context mentions "ELEVATE MODE" or "spec-it-elevate".
+
+In elevate mode, the standard exploration runs as normal, PLUS these additional outputs:
+
+### Additional Outputs (Elevate)
+
+1. **Static Code Extraction** — After browser crawl, also scan source code:
+   ```
+   Glob: {projectPath}/src/components/**/*.{tsx,jsx,vue}
+   Glob: {projectPath}/app/**/*.{tsx,jsx}
+   Extract: component file list, export names, prop types
+   ```
+
+2. **Design Token Extraction** — Extract from source code:
+   ```
+   Grep: tailwind.config.* → colors, spacing, fonts
+   Grep: globals.css / theme files → CSS variables
+   Write: {outputDir}/design-tokens.json
+   ```
+
+3. **Route Map** — Complete route inventory:
+   ```
+   Glob: app/**/page.tsx → extract all routes
+   Cross-reference with click-todo navigation results
+   Write: {outputDir}/route-map.md
+   ```
+
+4. **Component Inventory** — Static analysis of existing components:
+   ```
+   Count components per directory
+   Track imports and usage frequency
+   Write: {outputDir}/component-inventory.md
+   ```
+
+### Elevate Output Directory
+
+```
+00-exploration/
+├── click-todo.yaml          # Standard (all interactions)
+├── screenshots/             # Standard (per-page)
+├── screens/*.md             # Standard (per-screen analysis)
+├── navigation-structure.md  # Standard (persona matrix)
+├── component-inventory.md   # Elevate: static code extraction
+├── route-map.md             # Elevate: all routes discovered
+├── design-tokens.json       # Elevate: colors, fonts, spacing
+└── personas/*.md            # Written by persona-architect
+```
+
+### Elevate Gate
+
+Standard gate PLUS:
+- component-inventory.md exists with all source components listed
+- design-tokens.json exists with extracted values
+- route-map.md exists with all routes (browser + static)
+
+---
+
 ## Process
 
 ### Step 1: Project Type Detection
