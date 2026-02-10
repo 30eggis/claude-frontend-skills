@@ -153,6 +153,18 @@ wireframe_compliance_check:
 
 ---
 
+## Source HTML Adherence (original mode only)
+
+When DEV.md contains a `Source HTML:` field:
+1. Read the referenced HTML file BEFORE implementing
+2. Identify ALL widgets, sections, and interactive elements in the HTML
+3. Every widget in the source HTML MUST appear in the implementation
+4. DEV.md에 없더라도 HTML에 있는 위젯은 반드시 구현
+5. HTML의 mock data, 한국어 텍스트, 아이콘 구조를 그대로 사용
+6. Layout 구조 (grid columns, card order, section hierarchy) 보존
+
+---
+
 ## Implementation Rules
 
 ### Follow Spec Exactly

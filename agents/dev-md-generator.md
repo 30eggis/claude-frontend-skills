@@ -60,9 +60,16 @@ FOR each route in IA.md:
   5. Find matching permission requirements
   6. Find matching state models
   7. Find matching enum references
+  8. IF exploration data has mockup HTML mapping:
+     Find matching HTML file from 00-exploration/route-map.md
+     Add to DEV.md header: **Source HTML:** {absolute path to .html file}
 
   Compile DEV.md following dev-md-schema.md
 ```
+
+> **Source HTML** 필드는 mockup HTML 파일의 절대경로.
+> 이 필드가 있으면 burn B2에서 원본 대비 1:1 비교가 활성화됨.
+> Mockup이 제공되지 않은 경우 이 필드는 생략되며, WIREFRAME.md만 참조.
 
 ### 3. Build Sections
 

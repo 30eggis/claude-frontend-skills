@@ -66,7 +66,7 @@ IF uiMode is null:
 
 ```
 elevateDir = args[0]
-outputDir = args.output or Read({elevateDir}/_meta.json).projectPath
+outputDir = args.output or "{cwd}/burn-output"
 sessionId = args.resume or generateId()
 
 Read: {elevateDir}/_meta.json
@@ -82,9 +82,19 @@ Write: {sessionDir}/_meta.json
   "elevateDir": elevateDir,
   "outputDir": outputDir,
   "uiMode": uiMode,
+  "mockupDir": null,
   "currentPhase": "B0",
   "status": "in_progress"
 }
+
+Detect mockupDir:
+  Read: {elevateDir}/00-exploration/route-map.md
+    → Extract mockup HTML directory path
+    → Store in _meta.json as mockupDir
+
+  IF mockupDir not found from route-map:
+    Read: DEV.md files → parse "Source HTML:" fields
+    → Derive mockupDir from common parent path
 ```
 
 ### Step 3: Create Project Structure
@@ -203,9 +213,9 @@ FOR each depth level (DESC):
       ┌─ STEP 2: IMPLEMENT ───────────────────────────┐
       │                                                │
       │ Task(agent: dev-executor, model: sonnet)       │
-      │   Input: DEV.md + WIREFRAME.md (self-contained)│
       │                                                │
       │   IF uiMode == "generative":                   │
+      │     Input: DEV.md + WIREFRAME.md               │
       │     - Reference WIREFRAME.md as design guide   │
       │     - Generate new production code             │
       │     - Modern patterns + design tokens          │
@@ -213,14 +223,17 @@ FOR each depth level (DESC):
       │     - Permission guards                        │
       │                                                │
       │   IF uiMode == "original":                     │
-      │     - Extract existing HTML verbatim           │
-      │     - Refactor into components (same markup)   │
+      │     Input: DEV.md + Source HTML + API clients   │
+      │     - Read DEV.md → parse "Source HTML:" field  │
+      │     - Read the original HTML file directly     │
+      │     - 원본 HTML의 모든 위젯/컴포넌트를 1:1 구현 │
+      │     - DEV.md에 명시되지 않은 위젯도            │
+      │       HTML에 있으면 반드시 구현                 │
       │     - Add production layer on top              │
       │     - Preserve pixel-identical appearance      │
       │                                                │
       │   Both modes read:                             │
       │     - DEV.md (APIs, scenarios, validation)     │
-      │     - WIREFRAME.md (UI spec or HTML ref)       │
       │     - src/lib/api/{domain}.ts (API client)     │
       │     - src/types/ (shared types)                │
       │                                                │
@@ -258,6 +271,41 @@ FOR each depth level (DESC):
       │                                                │
       │ IF visual mismatch or missing elements:        │
       │   → fix → re-verify (max 3)                    │
+      └────────────────────────────────────────────────┘
+
+      ┌─ STEP 4.5: MOCKUP COMPARISON (original only) ─┐
+      │                                                │
+      │ SKIP IF uiMode != "original"                   │
+      │ SKIP IF DEV.md has no "Source HTML:" field      │
+      │                                                │
+      │ Chrome DevTools MCP:                           │
+      │                                                │
+      │ 1. navigate_page(file://{sourceHtmlPath})      │
+      │ 2. wait_for("page loaded", timeout: 10000)     │
+      │ 3. take_screenshot()                           │
+      │    → {sessionDir}/screenshots/{route}/original │
+      │                                                │
+      │ 4. navigate_page(devServerUrl + route)         │
+      │ 5. wait_for(key element, timeout: 10000)       │
+      │ 6. take_screenshot()                           │
+      │    → {sessionDir}/screenshots/{route}/result   │
+      │                                                │
+      │ 7. Read both screenshots side-by-side          │
+      │ 8. Compare:                                    │
+      │    - 위젯/섹션 개수 일치 여부                    │
+      │    - 레이아웃 구조 (그리드, 카드 배치)             │
+      │    - 데이터 테이블 컬럼/행 구조                   │
+      │    - 인터랙티브 요소 존재 여부                     │
+      │    - 사이드바/헤더 구조                           │
+      │                                                │
+      │ 9. IF 누락 위젯 or 구조 불일치:                   │
+      │    → 차이점 목록 생성                             │
+      │    → dev-executor에 원본 HTML + 차이점 전달      │
+      │    → 수정 후 re-compare (max 3)                │
+      │                                                │
+      │ 10. Save comparison result:                    │
+      │     {sessionDir}/screenshots/{route}/          │
+      │     comparison.md                              │
       └────────────────────────────────────────────────┘
 
       ┌─ STEP 5: MARK COMPLETE ───────────────────────┐
@@ -388,7 +436,7 @@ Overall:
 
 1. Ask UI approach before starting (generative vs original)
 2. Bottom-up: deepest pages first (depth DESC)
-3. DEV.md = sole input for each page implementation
+3. DEV.md = primary input. original 모드에서는 Source HTML도 필수 참조
 4. Browser verification required for every page
 5. TDD: tests before implementation
 6. User checkpoint after every depth level
@@ -396,3 +444,4 @@ Overall:
 8. 200-line file limit (code-quality-principles)
 9. No prop drilling — URL = State, SearchParams for filter/sort/pagination
 10. B4 cleans up dev artifacts (DEV.md, WIREFRAME.md, TDD.md)
+11. original 모드: Source HTML 1:1 비교 필수. 목업의 모든 위젯이 구현에 존재해야 함
